@@ -45,7 +45,7 @@ Stream<Interget> name
 
 2. Foreach- is terminal operator វាជា Consumber (nov return-voide) 
 
-3** flatmap (យើងចង់បំបែក ពីរ របស់ដុំទៅជារបស់រាយ យើងប្រើ flatmap) 
+3** flatmap (យើងចង់បំបែក ពីររបស់ដុំទៅជារបស់រាយ យើងប្រើ flatmap) 
 
 ex:
 
@@ -54,6 +54,8 @@ students.stream()
 			.distinct()
 			.forEach(System.out::println);
 
+
+=========================
 
 
 
