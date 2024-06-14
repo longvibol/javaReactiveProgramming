@@ -1,0 +1,86 @@
+A extends B, B extends C,....E
+
+? extends C : យើងអាចប្រើបានពី C ចុះក្រោមដល់ A
+? supper D : យើងអាចប្រើបានពី  D ឡើងទៅ E, F, 
+
+ex: Consumer
+
+- (Consumer< ? supper String > action): void - Stream 
+
+ចឹងចាប់ពី String ឡើងទៅយើងអាចដាក់វាចូលបាន
+
+- Consumer មានន័យថាប្រើប្រាស់ ចឹងវាជា Voide ( អត់មានអី Return មកវិញទេ គឺយើង Accept input then we can use it to do something) 
+
+ex: Function 
+
+map(Function < ? super String, ? extends R> សម្រាប់ Function វាត្រូវការ input (? super String) , ជាមួយនឹង Out put ( ? extends R) - <R> ជាធាតុរបស់ stream ថ្មី
+--> អីក៏បានដែល សម្រាប់ out put 
+
+
+---------------------------- 
+
+Imparitive vs functional programing 
+
+- Imparitive (if else, while loop, for loop ....) 
+- functional programing (we using stream-Functional function)  
+
+
+================== Importance 
+
+1. Map : ប្រើដើម្បីទាញយក អ្វីមួយបំលែងជា Stream (transform from one Type to another Type) - intermidia operator 
+
+Returns a stream consisting of the results of applying the givenfunction to the elements of this stream
+
+Example:
+
+students.stream()
+			.map(x -> x.getName())
+			.map(x ->x.length());
+
+យើងបាន៖
+Stream<Interget> name 
+
+
+-------------------------------------------------------
+
+2. Foreach- is terminal operator វាជា Consumber (nov return-voide) 
+
+3** flatmap (យើងចង់បំបែក ពីរ របស់ដុំទៅជារបស់រាយ យើងប្រើ flatmap) 
+
+ex:
+
+students.stream()
+			.flatMap(x ->x.getSubjects().stream())
+			.distinct()
+			.forEach(System.out::println);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
