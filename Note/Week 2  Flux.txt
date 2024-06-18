@@ -1,0 +1,193 @@
+Week 2 : Flux
+
+Publiser:
+
+1. Mono : 0-> 1 item
+2. Flux : 0,1 -> item
+
+-------------
+
+ដើម្បីបង្កើត Publiser យើងមាន Method ច្រើន ៖ 
+
+1. Flux.just
+2. flux.from
+- Publisher
+- [] array
+- iterable
+- Stream: stream 
+- Stream: supplier
+
+------------
+
+Flux.fromStream have two 
+
+1. from Stream ផ្ទាល់
+2. from Stream with Supplier (វាជា supplier ហើយវាមានដំណើរការជា Lazy) ពេលគេហៅបានវាធ្វើការ
+
+=========== How many way to create Stream (two From List or Array to create Stream ) 
+
+- Stream វាមានលក្ខណៈមួយគឺវាមិនអាចប្រើប្រាស់បាន យើងគិតទៅវាដូចជា ទឹកហូរហើយ ធ្វើការច្រោះវាចឹងវាមិនអាចប្រើបានឡើងវិញទេ
+បន្ទាប់ពីយើងប្រើ terminial operator ហើយគឺវាមានដំណើរការចប់ហើយ
+
+if we want to use stream again and again : 
+
+Flux<Integer> flux = Flux.fromStream(()-> list.stream());
+	
+	
+	flux.subscribe(x -> System.out.println("Recieved A: "+x));
+	flux.subscribe(x -> System.out.println("Recieved B: "+x));
+	
+
+--------------------------------------------------
+ex:
+
+Flux<Integer> flux = Flux.range(5, 10);		
+		
+		flux
+			.log()
+			.subscribe(x -> System.out.println(x));
+
+
+[ INFO] (main) | onSubscribe([Synchronous Fuseable] FluxRange.RangeSubscription)
+[ INFO] (main) | request(unbounded)
+[ INFO] (main) | onNext(5)
+
+- request(unbounded) : unbound មានន័យថាបើមានប៉ុន្មានធាតុអោយវា បង្ហាញមក
+- ចង់បាន Reference យកមកប្រើពីក្នុង function 
+- សម្រាប់ Subscribtion ពេលដែលយើង Cancel ហើយគឺវាលែងអាចធ្វើអ្វីបានទៀតទេ
+
+---------------------------------
+
+Flux vs List
+
+public Flux<String> getColorV2(int number){
+		return Flux.range(1, number)
+			.map(x -> getColor());
+	}
+	
+	
+	private String getColor() {
+		Util.sleep(1);
+		return Util.faker().color().name();
+	}
+
+------------------------
+
+ColorGenerator generator = new ColorGenerator();
+		System.out.println("....loading");
+		
+		//List<String> colors = colorGenerator.getColor(5);
+		//System.out.println(colors);
+
+-> ពេលវាធ្វើការចប់បានវាបង្ហាញ
+		
+		generator.getColorV2(5)
+			.subscribe(x ->System.out.println(x));
+
+-> សម្រាប់ Flux ពេលវាធ្វើហើយមួយវាចេញមកមួយនឹង
+ 
+
++ Interval សម្រាប់ Update ក្នុងរយះពេលណាមួយ
+
+public static void main(String[] args) {
+		
+		Flux.interval(Duration.ofSeconds(1))
+			.subscribe(x -> System.out.println(x));
+		
+		Util.sleep(5); // Block thread
+		
+	}
+
+
+- គេធ្វើវារាល់ពេល ១វិនាទីម្តង់វាត្រូវ Update អោយទៅ subscriber ម្តង់
+- stock we want to update every one hours !
+- the same schedule 
+
+
+-----------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
