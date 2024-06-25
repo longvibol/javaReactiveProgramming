@@ -1,7 +1,5 @@
 package java_reactive_demo.util;
 
-import org.reactivestreams.Subscription;
-
 import com.github.javafaker.Faker;
 
 import reactor.core.publisher.Mono;

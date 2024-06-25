@@ -1,8 +1,5 @@
 package java_reactive_demo;
 
-import java.util.Optional;
-import java.util.stream.Stream;
-
 import com.github.javafaker.Faker;
 
 import java_reactive_demo.util.Util;
@@ -22,6 +19,7 @@ public class Demo6Pipeline {
 		
 		//block
 		//user from database by id
+		
 		int userId=10;
 		
 		//User user = userRepo.findById(userId);

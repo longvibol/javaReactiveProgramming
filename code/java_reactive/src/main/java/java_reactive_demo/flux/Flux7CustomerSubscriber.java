@@ -1,14 +1,11 @@
 package java_reactive_demo.flux;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import java_reactive_demo.util.Util;
-import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 
 public class Flux7CustomerSubscriber {
@@ -45,13 +42,14 @@ public class Flux7CustomerSubscriber {
 			}
 		});
 		
-		atomicReference.get().request(5);
-		Util.sleep(2);
-		atomicReference.get().request(5);
-		Util.sleep(2);
-		atomicReference.get().cancel();
+		atomicReference.get().request(8);
 		Util.sleep(3);
 		atomicReference.get().request(5);
+		Util.sleep(2);
+		atomicReference.get().request(20);
+//		atomicReference.get().cancel();
+//		Util.sleep(3);
+//		atomicReference.get().request(5);
 		
 	}
 

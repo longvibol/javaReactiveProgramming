@@ -11,11 +11,13 @@ public class Flux8FluxVsList {
 		ColorGenerator generator = new ColorGenerator();
 		System.out.println("....loading");
 		
-		//List<String> colors = colorGenerator.getColor(5);
-		//System.out.println(colors);
+//		List<String> colors = generator.getColor(5);
+//		System.out.println(colors);
+		// delay time very long then it will come all the color 
 		
 		generator.getColorV2(5)
 			.subscribe(x ->System.out.println(x));
+		// the result come one by one 
 		
 			
 	}

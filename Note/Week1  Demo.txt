@@ -6,9 +6,9 @@ Ex: in the class have two students:
 
 --> it mean stu1 and stu2 no need to wait from one to one they can go there home then take the book to study! 
 
-- Java Reactiver study for optimize process ចាំពេលគេហៅចាំធ្វើការ នឹង (lazi) 
+- Java Reactiver study for optimize process ចាំពេលគេហៅចាំធ្វើការ នឹង (lazy) 
 
-Faker : use to generate data 
+- Faker : use to generate data 
 
 Ex: 
 

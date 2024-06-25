@@ -1,0 +1,29 @@
+Week 3:
+
+- FluxSink is the Thread safe so we can share to Multiple thread ban 
+
+
+Function :produce 
+
+public void produce() {
+		String threadName = Thread.currentThread().getName();
+		flusSink.next(threadName + " - " + Util.faker().color().name());
+	}
+
+-----------------
+
+- Thread មានន័យថាអ្នកធ្វើការអោយយើងសម្រាប់ធ្វើ Request អ្វីមួយ
+- Thread is the concorent access real time! 
+
+==> multi Thread make system run faster 
+
+Example : បុខប៊ីយែរ វារត់ទៅផ្លូវផ្សេងគ្នា វាជា concoreant access វារត់ទៅតាមផ្លូវរបស់វាផ្សេងៗគ្នា
+
+ដូចជាយើងលីបាវអង្ករ មួយគីឡូ គ្នាពីរនាក់ចំណាយពេលអស់ 1 hours so when we have more people the time will reduce 
+
+
+
+
+
+
+

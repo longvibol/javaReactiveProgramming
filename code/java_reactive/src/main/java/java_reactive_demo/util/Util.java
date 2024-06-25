@@ -36,6 +36,14 @@ public class Util {
 		return FAKER;
 	}
 	
+	public static DefaultSubcriber subcriber(String name) {
+		return new DefaultSubcriber(name);
+	}
+	
+	public static DefaultSubcriber subcriber() {
+		return new DefaultSubcriber();
+	}
+	
 	
 
 }

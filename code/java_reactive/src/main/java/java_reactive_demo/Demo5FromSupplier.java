@@ -1,11 +1,9 @@
 package java_reactive_demo;
 
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import com.github.javafaker.Faker;
 
-import java_reactive_demo.util.Util;
 import reactor.core.publisher.Mono;
 
 public class Demo5FromSupplier {

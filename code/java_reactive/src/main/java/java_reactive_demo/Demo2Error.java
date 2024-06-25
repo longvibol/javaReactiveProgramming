@@ -1,6 +1,5 @@
 package java_reactive_demo;
 
-import java_reactive_demo.util.Util;
 import reactor.core.publisher.Mono;
 
 public class Demo2Error {
@@ -12,7 +11,7 @@ public class Demo2Error {
 					.just("Thida")
 					.map(x -> x.length())
 					.map(t -> new RuntimeException("Something happen"))
-					.map(x ->5);
+					.map(x ->4);
 		
 		
 		mono.subscribe(
