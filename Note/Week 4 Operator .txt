@@ -1,0 +1,110 @@
+Week 4: Operator 
+
+1-Method Generate : synchronousSink it Emit the same thing non stop 
+		
+		Flux.generate(synchronousSink ->{
+			
+			synchronousSink.next("Vibol");
+			Util.sleep(1);		
+			
+		})
+		.take(3)
+		.subscribe(Util.subcriber());
+	}
+
+- Can not call two time: 
+Flux.generate(synchronousSink ->{
+			
+			synchronousSink.next("Vibol");
+			synchronousSink.next("Dara");	 XXXXXXXXXXXXXXXX
+			
+		})
+		.take(3)
+		.subscribe(Util.subcriber());
+
+================================================================
+
+Flux.range(1, 20)
+			.doOnCancel(()->System.out.println("doOnCancel"))
+			.doOnComplete(()->System.out.println("doOnComplete"))
+			.doFirst(()->System.out.println("doFirst 1"))
+			.doOnDiscard(Object.class, x -> System.out.println("doOnDiscard" + x))
+			.doOnError(e ->System.out.println("doOnError:"+ e.getMessage()))
+			.doOnNext(x -> System.out.println("doOnNext:" +x))
+			.doFirst(()->System.out.println("doFirst 2"))
+			.doFinally(signal ->System.out.println("doFinally" +signal))
+			.doOnRequest(l -> System.out.println("doOnRequest"+l))
+			.doOnSubscribe(s ->System.out.println("doOnSubscribe"+s))
+			.doFirst(()->System.out.println("doFirst 3"))
+			.doOnTerminate(()->System.out.println("doOnTerminate"))			
+			.subscribe(Util.subcriber());
+
+
+>>> doFirst ធ្វើពីក្រោមទៅលើ
+
+doFirst 3
+doFirst 2
+doFirst 1
+doOnSubscribereactor.core.publisher.FluxPeekFuseable$PeekFuseableSubscriber@6cc4c815
+doOnRequest9223372036854775807
+doOnNext:1
+Recieved: 1
+
+
+-------------------------------------------------------------------
+
+.doOnSubscribe(s ->System.out.println("doOnSubscribe 1 "+s))
+			.doFirst(()->System.out.println("doFirst 2"))
+			.doFinally(signal ->System.out.println("doFinally" +signal))
+			.doOnRequest(l -> System.out.println("doOnRequest"+l))
+			.doOnSubscribe(s ->System.out.println("doOnSubscribe 2"+s))
+
+
+>>>> ធ្វើពីលើចុះក្រោម
+
+doFirst 3
+doFirst 2
+doFirst 1
+doOnSubscribe 1reactor.core.publisher.FluxPeekFuseable$PeekFuseableSubscriber@3a82f6ef
+doOnSubscribe 2reactor.core.publisher.FluxPeekFuseable$PeekFuseableSubscriber@643b1d11
+
+
+--------------------------------------------------------------------
+
+
+- doFinly : always at the last line 
+
+
+- .doFinally(signal ->System.out.println("doFinally" +signal))
+
+We kee the doFinally at the last line
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

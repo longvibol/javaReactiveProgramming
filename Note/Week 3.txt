@@ -1,4 +1,4 @@
-Week 3:
+Week 3: Emitting (បញ្ចេញ ឬបញ្ជូនទិន្នន័យអោយ Subsriber) 
 
 - FluxSink is the Thread safe so we can share to Multiple thread ban 
 
