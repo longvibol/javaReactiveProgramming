@@ -1,0 +1,382 @@
+Week5: flatMap
+
+
+1. LimitRate (the same as pageination) 
+
+public static void main(String[] args) {
+
+		Flux.create(sink -> {
+			for(int i=1; i<=1000; i++) {
+				sink.next(i);
+			}
+		})
+		.log()
+		//.limitRate(100) // defaul request 75%
+		.limitRate(100, 0) // 0 mean 100% request 
+		.subscribe(Util.subcriber());
+	}
+
+
+---------------
+
+
+2. OnError 
+
+.onErrorReturn(-1) ពេលវាជួប បញ្ហាយើងអោយវាបង្ហា តម្លៃអ្វីតែម្តង់
+
+-------------------------
+
+.onErrorResume(e -> getFallback()) ពេលវាជួប បញ្ហាយើង ចង់អោយវាធ្វើអី
+ex :
+
+public static Mono<Integer> getFallback() {
+		return Mono.fromSupplier(() -> Util.faker().random().nextInt(100, 200));
+	}
+
+
+--------------------------
+
+.onErrorContinue((e,obj)->{
+			System.out.println("Error No. : " + obj + " Root cause: "+e.getMessage());
+		})
+
+វាជា BiFunction ទោះវាជួយ  Error ក៏វានៅតែបន្តដំណើរការដែល
+
+--------------------------
+
+*** TimeOut *** យើងរង់ចាំរយៈពេលណាមួយ បើផុតហើយយើង cancel ​វា
+
+public static void main(String[] args) {
+		
+		getNumbers()
+			.timeout(Duration.ofSeconds(2), fallBack())
+			.subscribe(Util.subcriber());	
+		
+		
+		Util.sleep(60);		
+	}	
+	
+	
+	private static Flux<Integer> getNumbers(){
+		return Flux.range(1, 10)
+			.delayElements(Duration.ofSeconds(5));
+	}	
+	
+	private static Flux<Integer> fallBack(){
+		return Flux.range(200, 100)
+			.delayElements(Duration.ofSeconds(1));
+	}
+
+បើវាមានបញ្ហាអ្វីមួយ យើងចង់អោយវា ធ្វើអីផ្សេង
+
+-------------------------------------------------
+*** defaultIfEmpty ***  
+// if the publicer does not produce any iteam we set the default value to the subcriber 
+
+public static void main(String[] args) {		
+		getNumbers()
+			.filter(x -> x>10)
+			.defaultIfEmpty(100)
+			.subscribe(Util.subcriber());
+
+	}
+	
+	private static Flux<Integer> getNumbers(){
+		return Flux.range(1, 10);
+		
+	}	
+
+-------------------------------------------------
+
+*** SwitchOnFirst : 
+
+public static void main(String[] args) {	
+		//getStudents is the publicer
+		getStudents()
+			.switchOnFirst((signal, flux)->{
+				//if the first student > 15 then it will switch to publicer that have Big letter 
+				// switch publicer
+				if(signal.isOnNext() && signal.get().getAge() >15) {
+					return myCustom().apply(flux);
+				}				
+				return flux;
+			})
+			.subscribe(Util.subcriber());		
+	}	
+
+----------------------------------------------------
+
+
+*** FlatMap *** 
+
+public static void main(String[] args) {
+		
+		// Flux<interge> have 10 item
+		// each iteam have Flux of 5 Object 
+		//Flux<Flux<object>> it mean Flux inside the flux
+		
+		// We want : flux<Object> have 50 iteam 
+		
+		
+		// user(id, name) -> order(userId, productName,price) 
+		// we want to know this user : how many order he has order 
+		
+		OrderService orderService = new OrderService();
+		UserService userService = new UserService();
+		
+		
+		userService.getUser()
+//			.map(user -> orderService.getOrder(user.getId())) : it return Flux back and we don't want it we want Flux<order>
+			.flatMap(user -> orderService.getOrder(user.getId()))
+			.subscribe(Util.subcriber());
+		
+		Util.sleep(60);
+	}
+
+}
+
+
+** Service need to create: 
+
+Class : Student 
+
+@Data
+public class Student {
+	
+	private String name;
+	private int age;	
+	
+	public Student() {
+	
+		this.name = Util.faker().name().firstName();
+		this.age = Util.faker().random().nextInt(10,25);
+	}
+	
+	
+
+}
+
+
+Class:  Order 
+
+@Data
+public class Order {
+
+	
+	private int userId;
+	private String productName;
+	private String price;
+	
+	public Order(int userId) {
+		this.userId= userId;
+		this.productName= Util.faker().commerce().productName();
+		this.price = Util.faker().commerce().price();
+	}
+	
+	
+	
+}
+
+
+Class: OrderService 
+
+public class OrderService {
+
+	// 1 user have 1 list of order:
+	private static Map<Integer, List<Order>> db = new HashMap<>();
+	
+	// create static block 
+	
+	static {
+		// user 1 have order list 1
+		List<Order> list1 = List.of(
+					new Order(1),
+					new Order(1),
+					new Order(1)
+				);
+		
+		// user 2 have order list 2
+		List<Order> list2 = List.of(
+				new Order(2),
+				new Order(2)	
+			);
+		db.put(1, list1);
+		db.put(2, list2);
+		
+	}
+	
+	/*
+	public Flux<Object> getOrder(int userId){
+		return Flux.create(fluxSink ->{
+			//db.get(userId).forEach(x -> fluxSink.next(x));
+			
+			db.get(userId).forEach(fluxSink::next);
+			fluxSink.complete();
+		})
+				.delayElements(Duration.ofSeconds(1))
+				;
+	}
+	
+	*/
+	
+	public Flux<Order> getOrder(int userId){
+		return Flux.create((FluxSink<Order>fluxSink) ->{
+			//db.get(userId).forEach(x -> fluxSink.next(x));
+			
+			db.get(userId).forEach(fluxSink::next);
+			fluxSink.complete();
+		})
+				.delayElements(Duration.ofSeconds(1))
+				;
+	}
+	
+	
+}
+
+
+Class: UserService
+
+
+public class UserService {
+	
+	public Flux<User> getUser(){
+		return Flux.range(1, 2)
+				.map(x -> new User(x));
+	}
+
+}
+
+------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
