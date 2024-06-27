@@ -1,0 +1,8 @@
+Howework Week6: 
+
+Publisher: purchaseOrder (productName, price, qty, category)
+
+Subsriber: 
+
+1. revenue : money(0) -> sale ban 100$ -> money(100)
+2. inventory: stock(100) we sale iPhone ban 5 pcs then stock(95)

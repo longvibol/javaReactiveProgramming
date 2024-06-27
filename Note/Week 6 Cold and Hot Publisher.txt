@@ -1,0 +1,481 @@
+Week 6: Cold and Hot Publisher
+
++ Cold publisher : separated streaming data : ដូចយើងមើល Netflx យើងចូលមុន ហើយមើលរឿងមួយ មុន ចឹងអ្នកក្រោយមកមួយទៀតគឺអាចមើលបានពីដើមដូចអ្នកដើមដែល
+
+
++ Hot Publisher : not separated : ដូចយើងមើលកីឡាវ៉យបុក យើងមើលតាំងពីម៉ោង ២ មកហើយ ចឹងអ្នកចូលក្រោម មើលតាមក្រោម គឺមិនអាចមើលពីមុនបានទេ
+
+--------------- Cold publisher :
+
+public static void main(String[] args) {
+
+		Flux<String> flux = Flux.fromStream(() ->getMovies())
+				.delayElements(Duration.ofSeconds(2));
+		
+		flux.subscribe(Util.subcriber("Dara"));
+		
+		Util.sleep(5);
+		
+		flux.subscribe(Util.subcriber("Thida"));
+		
+		Util.sleep(60);
+		
+	}
+	
+	private static Stream<String> getMovies(){
+		System.out.println("Request streaming video...");
+		return Stream.of("scene 1","scene 2","scene 3","scene 4","scene 5","scene 6");
+	}
+
+}
+
+1st : Dara watch movie first then Thida watch ==> result Dara finish first then Thida 
+
+Request streaming video...
+Dara - Recieved: scene 1
+Dara - Recieved: scene 2
+Request streaming video...
+Dara - Recieved: scene 3
+Thida - Recieved: scene 1
+Dara - Recieved: scene 4
+Thida - Recieved: scene 2
+Dara - Recieved: scene 5
+Thida - Recieved: scene 3
+Dara - Recieved: scene 6
+Completed
+Thida - Recieved: scene 4
+Thida - Recieved: scene 5
+Thida - Recieved: scene 6
+Completed
+
+
+------------------------------------------------
+
+HotPublisher : Share Method : ដូចមើល live TV ហើយពេលវាចប់គឺចប់ព្រមគ្នា
+
+		Flux<String> flux = Flux.fromStream(() ->getMovies())
+				.delayElements(Duration.ofSeconds(2))
+				.share();
+
+==>
+
+Request streaming video...
+Dara - Recieved: scene 1
+Dara - Recieved: scene 2
+Dara - Recieved: scene 3
+Thida - Recieved: scene 3
+Dara - Recieved: scene 4
+Thida - Recieved: scene 4
+Dara - Recieved: scene 5
+Thida - Recieved: scene 5
+Dara - Recieved: scene 6
+Thida - Recieved: scene 6
+Completed
+Completed
+
+--------------------------------------------------
+
+Method : publish -> refCount(1) 
+
+ // .publish().refCount(1): the same as .share Method 
+		 
+		Flux<String> flux = Flux.fromStream(() ->getMovies())
+				.delayElements(Duration.ofSeconds(2))
+				.publish()
+				.refCount(1);
+
+++++++++++++++++
+
+Flux<String> flux = Flux.fromStream(() ->getMovies())
+				.delayElements(Duration.ofSeconds(2))
+				.publish()
+				.refCount(2);
+
+// .refCount(2) : វារង់ចាំ ទាល់តែមាន ២ subscriber បានវាចាប់ផ្តើមធ្វើការ
+
+Request streaming video...
+Dara - Recieved: scene 1
+Thida - Recieved: scene 1
+Dara - Recieved: scene 2
+Thida - Recieved: scene 2
+Dara - Recieved: scene 3
+Thida - Recieved: scene 3
+Dara - Recieved: scene 4
+Thida - Recieved: scene 4
+Dara - Recieved: scene 5
+Thida - Recieved: scene 5
+Dara - Recieved: scene 6
+Thida - Recieved: scene 6
+Completed
+Completed
+
+
+++++++++++++++++++
+
+Resubscriber : 
+
+Flux<String> flux = Flux.fromStream(() ->getMovies())
+				.delayElements(Duration.ofSeconds(1))
+				// delayElement = one second Emit 1 time 
+				.publish()
+				.refCount(1);	
+		
+		
+		flux.subscribe(Util.subcriber("Dara"));
+		
+		Util.sleep(10);
+		
+		flux.subscribe(Util.subcriber("Thida"));
+		
+		Util.sleep(60);
+
+---- check at delayElements(Duration.ofSeconds(1))
+មួយ វិនាទីវាផ្សាយចេញមួយដង់
+
+ចឹងមានន័យថា ៖ ពេលដារ៉ាមើលចប់ ហើយមាន subscriber Thida មកថ្មី វាធ្វើការ subscriber ឡើងវិញ​ ព្រោះគេមើលចប់បាត់ទៅហើយ
+
+* Request streaming video...
+Dara - Recieved: scene 1
+Dara - Recieved: scene 2
+Dara - Recieved: scene 3
+Dara - Recieved: scene 4
+Dara - Recieved: scene 5
+Dara - Recieved: scene 6
+Completed Dara
+
+
+* Request streaming video...
+Thida - Recieved: scene 1
+Thida - Recieved: scene 2
+Thida - Recieved: scene 3
+Thida - Recieved: scene 4
+Thida - Recieved: scene 5
+Thida - Recieved: scene 6
+Completed
+
+-------------------
+គេកំពុងផ្សាយ ហើយគេមើលចប់ហើយ ទោះមាននាក់ចូលថ្មីមក ក៏អត់មានអីមើលដែល​ ចឹងគេប្រើ AutoConnect(1)
+
+.AutoConnect(1);
+
+Flux<String> flux = Flux.fromStream(() ->getMovies())
+				.delayElements(Duration.ofSeconds(1))
+				// delayElement = one second Emit 1 time 
+				.publish()
+				.autoConnect(1);
+
+
+flux.subscribe(Util.subcriber("Dara"));
+		
+		Util.sleep(10);
+		System.out.println("Thida is about to join ....");
+		flux.subscribe(Util.subcriber("Thida"));
+		
+		Util.sleep(60);
+
+==> 
+
+Request streaming video...
+Dara - Recieved: scene 1
+Dara - Recieved: scene 2
+Dara - Recieved: scene 3
+Dara - Recieved: scene 4
+Dara - Recieved: scene 5
+Dara - Recieved: scene 6
+Completed
+Thida is about to join ....
+
+--------------- 
+* .autoConnect(0): វាមិនត្រូវការអ្នក subscriber អីទេ បើទោះជាមានអ្នក subscriber មកតាមក្រោយគេវាបានលែងរួចរាល់ហើយ
+
+subscriber ចូលមកចន្លោះណាមើលចន្លោះនឹងទៅ
+
+Flux<String> flux = Flux.fromStream(() ->getMovies())
+				.delayElements(Duration.ofSeconds(1))
+				// delayElement = one second Emit 1 time 
+				.publish()
+				.autoConnect(0);	
+		
+		Util.sleep(3);
+		flux.subscribe(Util.subcriber("Dara"));
+		
+		Util.sleep(3);
+		System.out.println("Thida is about to join ....");
+		flux.subscribe(Util.subcriber("Thida"));
+		
+		Util.sleep(60);
+
+
+==>
+
+Request streaming video...
+Dara - Recieved: scene 4
+Dara - Recieved: scene 5
+Thida is about to join ....
+Dara - Recieved: scene 6
+Thida - Recieved: scene 6
+Completed
+Completed
+
+
+-------------------------------
+
+*** .cache(); *** អ្នកមុនហើយ ក្នុងករណីបើមានអ្នក subscriber មកថ្មីគឺវា បោះអោយអ្នកថ្មីទាំងអស់ (no need to request the up stream) 
+
+Flux<String> flux = Flux.fromStream(() ->getMovies())
+				.delayElements(Duration.ofSeconds(1))			
+				.cache();	
+		
+		Util.sleep(1);
+		flux.subscribe(Util.subcriber("Dara"));
+		
+		Util.sleep(10);
+		System.out.println("Thida is about to join ....");
+		flux.subscribe(Util.subcriber("Thida"));
+
+
+==> Result:
+
+Request streaming video...
+Dara - Recieved: scene 1
+Dara - Recieved: scene 2
+Dara - Recieved: scene 3
+Dara - Recieved: scene 4
+Dara - Recieved: scene 5
+Dara - Recieved: scene 6
+Completed
+Thida is about to join ....
+Thida - Recieved: scene 1
+Thida - Recieved: scene 2
+Thida - Recieved: scene 3
+Thida - Recieved: scene 4
+Thida - Recieved: scene 5
+Thida - Recieved: scene 6
+Completed
+
+It will return all the 1 to 6 Scene to Thida 
+
+if we want to cache only the last two Scene we put : 
+
+Flux<String> flux = Flux.fromStream(() ->getMovies())
+				.delayElements(Duration.ofSeconds(1))			
+				.cache(2);	
+
+
+==========
+
+Request streaming video...
+Dara - Recieved: scene 1
+Dara - Recieved: scene 2
+Dara - Recieved: scene 3
+Dara - Recieved: scene 4
+Dara - Recieved: scene 5
+Dara - Recieved: scene 6
+Completed
+Thida is about to join ....
+Thida - Recieved: scene 5
+Thida - Recieved: scene 6
+Completed
+
+
+----------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
