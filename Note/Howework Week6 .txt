@@ -6,3 +6,216 @@ Subsriber:
 
 1. revenue : money(0) -> sale ban 100$ -> money(100)
 2. inventory: stock(100) we sale iPhone ban 5 pcs then stock(95)
+
+--------------------------------------
+
+Operator for Scheduling: 
+
+Thread = Request handler in the PC 
+
+1 - Default Thread: 
+
+* One thread handle from Begging until End 
+
+public static void main(String[] args) {
+
+		Flux<Object> flux = Flux.create(sink -> {
+			printThreadName("create");
+			sink.next(10);
+		}).doOnNext(x -> printThreadName("onNext: " + x));
+
+		Runnable runnable = () -> flux.subscribe(x -> printThreadName("sub: " + x));
+
+		for (int i = 0; i < 2; i++) {
+			new Thread(runnable).start();
+		}
+
+	}
+
+++++++++++++++++++++++++++++++++++++++
+
+create - Thread: Thread-1
+create - Thread: Thread-0
+onNext: 10 - Thread: Thread-0
+sub: 10 - Thread: Thread-0
+onNext: 10 - Thread: Thread-1
+sub: 10 - Thread: Thread-1
+
+
+--------------------
+
+Scheduler:
+
+- boundedElastic : Network/Time-consuming calls ភ្ជាប់ទៅកាន់ Database (write data to database)
+- parallel: CPU Intensive tasks : មានប្រសិទភាព
+- Single : single dedicated thread for one-off tasks
+- immediate: current thread 
+
+------------------------
+
+Operator For Scheduling: 
+
+We don't want to use default thread So we can use:
+
+- subscribeOn: for upstream
+- publishOn: for downstream 
+
+* for the default it is working on current thread, when we use subribeOn 
+=> it switchs to Scheduler Thread (boundedElastic,parallel…) 
+
+*** How to use SubscribeOn 
+
+1. Why we need to switch current Threa ==> we don't want to block currently thread (​ដើម្បីអោយវាធ្វើការ asychonorly)
+
+- To make performing system good ជំនួយអោយ system យើងដើរលឿន
+- យើងលើកបាវអង្ករចេញពីឡាន បើយើងលើកមួយនាក់ឯកវាប្រើពេលយូរ បើយើងមានគ្នាច្រើន វាចំណាយពេលតិច
+
+
+Ex: change thread :
+
+Flux<Object> flux = Flux.create(sink -> {
+			printThreadName("create");
+			sink.next(10);
+		}).doOnNext(x -> printThreadName("onNext: " + x));
+		
+		flux
+			.doFirst(() -> printThreadName("doFirst 2 : "))
+			.subscribeOn(Schedulers.boundedElastic())
+			.doFirst(() -> printThreadName("doFirst 1 : "))
+			.subscribe(x -> printThreadName("sub: " + x));
+		
+		Util.sleep(60);
+
+
++ method: 
+
+private static void printThreadName(String text) {
+		System.out.println(text + " - Thread: " + Thread.currentThread().getName());
+	}
+
+
+doFirst 1 :  - Thread: main
+doFirst 2 :  - Thread: boundedElastic-1
+create - Thread: boundedElastic-1
+onNext: 10 - Thread: boundedElastic-1
+sub: 10 - Thread: boundedElastic-1
+
+==> we switch from Main thread to boundedElastic-1
+
+ex: we want to print the book at PP and now we are at KPS so we ask person at PP to print for us when we arrive PP we can get the book!
+
+---------------
+
+
+Example : 2 Thread working :
+
+public static void main(String[] args) {
+
+		Flux<Object> flux = Flux.create(sink -> {
+			printThreadName("create");
+			sink.next(10);
+		}).doOnNext(x -> printThreadName("onNext: " + x));	
+		
+		Runnable runnable = () -> flux
+				.doFirst(() -> printThreadName("doFirst 2 : "))
+				.subscribeOn(Schedulers.boundedElastic()) // where we change the thread to : boundedElastic
+				.doFirst(() -> printThreadName("doFirst 1 : "))
+				.subscribe(x -> printThreadName("sub: " + x));
+
+		for (int i = 0; i < 2; i++) {
+			new Thread(runnable).start();
+		}
+		
+		Util.sleep(60);
+
+	}	
+
+	private static void printThreadName(String text) {
+		System.out.println(text + " - Thread: " + Thread.currentThread().getName());
+	}
+}
+
+
+doFirst 1 :  - Thread: Thread-0 // main thread 
+doFirst 1 :  - Thread: Thread-1 // main thread 
+doFirst 2 :  - Thread: boundedElastic-1  // switching from main thread to boundedElastic-1
+doFirst 2 :  - Thread: boundedElastic-2  // switching from main thread to boundedElastic-2
+
+-------------- Main task the thread need to do as below and assign : 
+
+create - Thread: boundedElastic-1
+create - Thread: boundedElastic-2
+onNext: 10 - Thread: boundedElastic-1
+onNext: 10 - Thread: boundedElastic-2
+sub: 10 - Thread: boundedElastic-1
+sub: 10 - Thread: boundedElastic-2
+
+
+អ្នកនៅជិះជាងគេគឺជាអ្នកទទួលការងារ 
+----------------------------------------------------------------------
+
+Exmale: Mutil Switching Thread : 
+
+public static void main(String[] args) {
+
+		Flux<Object> flux = Flux.create(sink -> {
+			printThreadName("create");
+			sink.next(10);
+		})
+			.subscribeOn(Schedulers.newParallel("vibol"))
+			.doOnNext(x -> printThreadName("onNext: " + x));
+		
+		
+		flux
+			.doFirst(() -> printThreadName("doFirst 2 : "))
+			.subscribeOn(Schedulers.boundedElastic())
+			.doFirst(() -> printThreadName("doFirst 1 : "))
+			.subscribe(x -> printThreadName("sub: " + x));
+		
+		Util.sleep(60);
+
+==> 
+
+
+doFirst 1 :  - Thread: main
+doFirst 2 :  - Thread: boundedElastic-1
+create - Thread: vibol-1
+onNext: 10 - Thread: vibol-1
+sub: 10 - Thread: vibol-1
+
+
+-------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
