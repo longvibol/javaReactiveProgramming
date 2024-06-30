@@ -1,0 +1,131 @@
+Pub/Sub
+
+1 Publisher
+
+2 Subscription
+
+3 Subscriber
+
+--------------- 
+Publisher: អ្នកផលិ​ត  source , data or sink 
+វាមាន តួនាទីបញ្ចេញធាតុទៅអោយ Subscriber របស់វាម្តង់មួយៗ
+
+- Have 4 Method to create Pub/sub
+
+1. onSubscribe() : first subscription 
+2. emmiting ពេលបញ្ចូន iteam នីមួយៗ : onNext()- ពេលយើងប្រើ onNext នឹងយើងនឹងបាន iteam ម្តងមួយៗ
+3. onComplete (ពេលអស់ធាតុវា ហៅ onComplete)- Autocall
+4. onError() - ពេលមាន Error
+
+
+-------- សម្រាប់ Java Reactive គេមានពីរ Model សម្រាប់ Publisher នឹងគឺ 
+
+1. Mono វាជា publisher មួយដែលមាន iteam 0 and 1 (this biggest is 1) 0 -> 1
+2. Flux: វាជា publisher មួយដែលមាន ច្រើន (0-->N)
+
+
+--------------- Example 
+
+Mono is in the reactor.core.publisher
+
+ex:
+//publiser have Lazy- it is not working if there are no subscriber 
+		
+		Mono<String> mono = Mono.just("Vibol");
+
+- default របស់វាគឺ lazy ​ទាល់តែមាន subsribe មកវាបានវាធ្វើការ
+
+Ex: 
+Mono<String> mono = Mono.just("Vibol");
+		mono.subscribe(x ->System.out.println(x));
+
+==> Vibol
+វាស្រដៀង ទៅនឹង Stream ដែលទាល់តែវាជួយ terminal operator បានវាធ្វើការ
+
+Explain1 :
+
+Mono.just("Vibol")​ = ​គឺវាជាអ្នកបង្កើត Object ហើយ Mono<String> mono វាជា Publisher 
+
+ex: 2
+
+Mono<Integer> mono = Mono
+				.just("Vibol")
+				.map(x ->x.length())
+				.map(x ->x/0);
+		
+		mono.subscribe(
+				x -> System.out.println("onNext + " + x), 
+				e -> System.out.println("onError: " + e.getMessage()), 
+				() -> System.out.println("onComplete"));
+		
+	}
+
+- *** មានរយៈនឹងមានន័យថា បើមាន error កើតឡើង code របស់យើងវា​នឹងបង្ហាញ បញ្ហាមកពីអ្វី
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

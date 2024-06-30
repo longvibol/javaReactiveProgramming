@@ -1,0 +1,221 @@
+Week1 : Demo (Asynchous Non Blocking)​ ប្រព័ន្ធអាចធ្វើការដំណើរគ្នាបាន
+
+Ex: in the class have two students: 
+
+1 student and 2 student please go home to take book and stuay
+
+--> it mean stu1 and stu2 no need to wait from one to one they can go there home then take the book to study! 
+
+- Java Reactiver study for optimize process ចាំពេលគេហៅចាំធ្វើការ នឹង (lazy) 
+
+- Faker : use to generate data 
+
+Ex: 
+
+for (int i = 0; i < 10; i++) {
+
+			String name = Faker.instance().color().name();
+			System.out.println(name);
+
+		}
+---
+Note in Reactive we should not return Null ព្រោះពេលវាអត់មានយើងអាចអោយវាចេញអីផ្សេងបានក្រៅពី Null
+
+Ex: CountryRepository.findByid(1)
+			.subscribe(Util.onNext(),Util.onError(),Util.onComplete());
+
+------------- function 
+
+public static Mono<String> findByid(int countryId){
+		if(countryId ==1) {
+			return Mono.just(Faker.instance().country().name());
+		} else if (countryId == 2) {
+			return Mono.empty();
+		}
+		return Mono.error(new RuntimeException("Country provide is not in the range"));
+	}
+
+=======================================================================================================
+
+1. Supplier : អ្នកផ្តល់អោយ ជាប្រភព String integer list ...
+
+//Method : .just គឺយើងប្រើសម្រាប់ពេលដែលវាមាន data សម្រាប់​.just("Vibol")
+
+		//Mono<String> mono = Mono.just(getName());
+		
+//		In Java Reactiver we want to make the process faster by request we will excercute but no call 
+//		we no need to run it 
+		
+		Mono<String> mono = Mono.fromSupplier(()-> getName());
+		mono.subscribe(Util.onNext(), Util.onError(), Util.onComplete());
+
+	}
+	
+	private static String getName() {
+		System.out.println("Generating name....");
+		return Faker.instance().funnyName().name();
+	}
+
+====> ចឹងសម្រាប់ method .fromsupplier យើងត្រូវប្រើវា ហើយទាល់តែមានអ្នក Subcribe បានអោយវាដើរ
+
+------------------------------------
+
+String optinal = Stream.of("test","love")
+			.filter(x->x.startsWith("t"))
+			.findFirst()
+			.orElseGet(()->"Not found");
+		
+		System.out.println(optinal);
+
+សម្រាប់ Optinal វាជា ​lazi ពេលដែលវា រកអត់ឃើញតម្លៃនឹងបានវា ធ្វើការ ​បើវារក់ឃើញចំណើរដែលគេចង់បាននឹងវាអត់ចេញអីនោះទេ
+
+
+===================== Pipeline ជាដំណាក់កាល់ពីមួយទៅមួយ : Mono is the publisher 
+
+
+public class Demo6BuildPipeline {
+
+	public static void main(String[] args) {
+		getName();
+		getName().subscribe(x -> System.out.println(x));
+		getName();	
+
+	}
+	
+	private static Mono<String> getName() {
+		System.out.println("Entering to method...");
+		return Mono.fromSupplier(()->{
+			System.out.println("Generate name ....");			
+			Util.delay(3);
+			return Faker.instance().country().name();
+		}).map(x ->x.toUpperCase());
+	}
+
+}
+
+
+ពេលដែលមាន subscribe ទើមវាធ្វើការ (return Mono.fromSupplier(()->{
+			System.out.println("Generate name ....");			
+			Util.delay(3);
+			return Faker.instance().country().name();
+		}).map(x ->x.toUpperCase());
+គេហៅថា pipleline 
+
+------------------------------------------------------------------- 
+
+គោលបំណង់របស់ Java Reactive គឺយើងចង់អោយវាដំណើរការដោយមិនពឺងផ្អែកគ្នា ចឹង សម្រាប់ method : getName(); វាមានការរងចាំ ចឹងយើងត្រូវ
+ថែ concetp មួយទៀតដើម្បីអោយវាធ្វើការជាមួយគ្នាបាន​
+
+getName()
+			.subscribeOn(Schedulers.boundedElastic())
+			.subscribe(x->System.out.println(x));
+
+តែវានៅតែមានបញ្ហាព្រោះវា បានធ្វើការហើយតែវា មិនឃើញបង្ហាញលទ្ធផងចឹង ដូចនេះដើម្បីអោយវាចេញ លទ្ធផងត្រូវ ធ្វើការផ្អាក់ដំណើរការវា​
+Util.delay(5);
+
+យើងពន្យាលពេលនៅកន្លែងណាមួយអោយវាដើរវិញ
+
+*** concerent access : 
+
+concept Multi call.
+
+Ex. in pc we have 8 CPU core = 8 thread អាចធ្វើការដំណារគ្នា​
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
