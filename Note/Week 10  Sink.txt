@@ -1,0 +1,165 @@
+Week 10 : Sink
+
+
+Keywords:
+
+- Publisher (emit iteam or publish data)
+- Subscriber (consum the data or itea from Publisher
+- processor ( it can me Pub/Sub
+
+
+--------------------------------------------------------
+
+Ex :demo 1
+
+public class S2SinksMonoError {
+
+	public static void main(String[] args) {
+
+		One<Object> sink = Sinks.one(); // sink handle with publisher or working with as publiser 
+		Mono<Object> mono = sink.asMono(); // mono handle with subscirber 
+		
+		mono.subscribe(Util.subcriber("Dara"));
+		//mono.subscribe(Util.subcriber("Thida"));
+		
+		sink.tryEmitValue("Hello world"); // Hello world emit to the subscriber so if have subscirber the subcriber will get this message
+		//sink.tryEmitValue("How are you doing !"); // becaue it is mono so it have email only one time 
+
+		
+	}
+
+}
+
+note : sink.tryEmitValue : it Emit the item Hello world to the subscriber 
+
+Result: 
+
+Dara - Recieved: Hello world
+Completed
+Thida - Recieved: Hello world
+Completed
+
+
+--------------------------------------------------------------------------
+
+2. Demo 2 : 
+
+public static void main(String[] args) {
+
+		One<Object> sink = Sinks.one(); // sink handle with publisher or working with as publiser 
+		Mono<Object> mono = sink.asMono(); // mono handle with subscirber 
+		
+		mono.subscribe(Util.subcriber("Dara"));
+		
+		sink.tryEmitEmpty();
+	}
+
+Note: 
+
+sink.tryEmitEmpty(); nothing was email to sub
+
+Returl : Completed
+
+----------------------------------------------------
+
+public static void main(String[] args) {
+
+		One<Object> sink = Sinks.one(); // sink handle with publisher or working with as publiser 
+		Mono<Object> mono = sink.asMono(); // mono handle with subscirber 
+		
+		mono.subscribe(Util.subcriber("Dara"));
+		//mono.subscribe(Util.subcriber("Thida"));
+		
+		//sink.tryEmitValue("Hello world"); // Hello world emit to the subscriber so if have subscirber the subcriber will get this message
+		//sink.tryEmitValue("How are you doing !"); // becaue it is mono so it have email only one time 
+
+		sink.tryEmitError(new RuntimeException("Error from sink: ...!"));
+		
+	}
+
+}
+
+===>
+
+onError: Error from sink: ...!
+onError: Error from sink: ...!
+
+-------------------------------------------------------- 
+
+SAM: signle Abstrak Methos 
+
+--------------------------------------------------------
+
+public class S3EmitFailureHandle {
+
+	public static void main(String[] args) {
+
+		One<Object> sink = Sinks.one(); 
+		Mono<Object> mono = sink.asMono(); 
+		
+		mono.subscribe(Util.subcriber("Dara"));
+		
+		sink.tryEmitValue("Hey");
+		
+		// emil Failure handler : when have probem then it will working 
+		sink.emitValue("Hello Sunday", (signlType, emitResult) ->{		
+			System.out.println(signlType.name());
+			System.out.println(emitResult.name());
+			return true;
+		});
+		
+		
+	}
+
+}
+
+
+
+
+note:
+
+sink.emitValue("Hello Sunday", (signlType, emitResult) ->{		
+			System.out.println(signlType.name());
+			System.out.println(emitResult.name());
+			return true;
+		});
+***
+return true; it will retry infinite 
+
+***
+
+return false; No retry 
+
+----------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

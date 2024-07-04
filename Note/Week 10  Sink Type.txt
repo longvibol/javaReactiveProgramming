@@ -1,0 +1,119 @@
+Week 10 : Sink Type
+
+type		:	Behavior	:	Pub-Sub
+- one		:	Mono		:	1:N  // 1 publisher can have many subscriber 
+- many-unicast	:	Flux		:	1:1 
+- many-Multicast:	Flux		:	1:N
+- many-replay	:	Flux		:	1:N (With replay of all values for late subscribers) 
+
+
+- Thread Safe : 
+Ex: យើងដំណើរការប៉ុន្មានដង់ក៏ដោយក៏ចំលើយនៅតែដដែល​
+Ex: object ពីរព្យាយាមទៅ Update object value ណាមួយតម្លៃចុងក្រោងគឺជាតម្លៃចុងក្រោយ
+
+--------------------------------------------
+
+1. S4Unicast 
+
+public static void main(String[] args) {
+
+		// sink = publisher
+		Many<Object> sink = Sinks.many().unicast().onBackpressureBuffer(); //unicast : one Sub and one Pub 
+		
+		// flux = subcirber 
+		Flux<Object> flux = sink.asFlux();
+		
+		sink.tryEmitNext("Hello");
+		sink.tryEmitNext("How are you !");
+		
+		flux.subscribe(Util.subcriber("Dara"));
+		flux.subscribe(Util.subcriber("Thida")); // have two sub is error 
+	}
+
+}
+
+Note: 
+
+Many<Object> sink = Sinks.many().unicast().onBackpressureBuffer();
+
+we create publisher with Uniast then with onBackpresuerBuffer (if publisher create many than reciver it will drop some item) 
+
+- Error if we have more than 1 subscriber 
+
+----------------------------------------------------------
+
+2. SinkThreadSafety : Sink is the Thread Safe (that what we want )
+
+public static void main(String[] args) {
+
+		// sink = publisher
+		Many<Object> sink = Sinks.many().unicast().onBackpressureBuffer(); 
+		
+		// flux = subcirber		
+		Flux<Object> flux = sink.asFlux();
+
+		List<Object> list = new ArrayList<>();
+		
+		//flux.subscribe(x ->list.add(x));
+		flux.subscribe(list::add);
+
+		for (int i = 0; i < 100; i++) {
+			int j =i;
+			CompletableFuture.runAsync(() -> {
+				//sink.tryEmitNext(j);
+				sink.emitNext(j, (s,e)->true);
+			});
+		}
+
+		Util.sleep(1);
+		System.out.println(list.size());
+
+	}
+
+Note: 
+it have only one subscriber then we want to have value 100 every thread ruuning : 
+
+- we want to get the Sink (publisher that publish the same iteam all the time) it is call Sink Thread Safy 
+
+- sink.emitNext(j, (s,e)->true); អោយវាធ្វើការទាល់តែអស់ iteam I ban ory vir stop 
+
+- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
