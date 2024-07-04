@@ -22,8 +22,8 @@ public class Demo5FromSupplier {
 		
 		//Optional.of("test")
 		
-		String optional = Stream.of("test","dfads")
-			.filter(x -> x.startsWith("d"))
+		String optional = Stream.of("test","vibol")
+			.filter(x -> x.startsWith("v"))
 			.findFirst()
 			.orElseGet(() -> "Not found");
 		

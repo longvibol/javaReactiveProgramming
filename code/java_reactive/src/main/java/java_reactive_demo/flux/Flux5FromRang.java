@@ -10,6 +10,7 @@ public class Flux5FromRang {
 //		Flux<Integer> flux = Flux.range(1, 10);		
 //		flux.subscribe(x -> System.out.println(x));				
 		
+		// rang = for loop
 		Flux.range(1,10)
 			.map(x -> x + " : "+ Util.faker().country().name())			
 			.subscribe(x -> System.out.println("Country " +x));		
