@@ -1,0 +1,329 @@
+Week 10 Sink Assignment
+
+Publish group Chate Assingment: 
+
+Similar concept with Slack website 
+
+------------------------------------------------ 
+
+Slack Application 
+
+- Slack Room : (joinRoom(), groupName, Sinks (we want to get : sender and receiver msg), Flux of message in group- to member can subsribe)
+
+- Slack Member : (name, says(), receive()) 
+
+- Slack Message : (sender, receiver, message) 
+
+Flow Working : 
+
+dara: subsrice to the group 
+Rith: subsrice to the group 
+
+Then : Dara "say something" Hello Everyone
+
+So Rith can see the Message from Dara 
+then Rith "say I am glad to be here" 
+
+- Thida jus subscribe to the group 
+
+Then She also can see the old message. 
+
+=========================================================
+
+- ពេលដែលគេ Join Room ភ្លៀមអោយគេ Subscrib មកកាន់ Group Chat នឹង
+
+- មានន័យថា User want to chat into the group -> យើងយក msg នឹងយកទៅ Publish inside the group 
+so all the member can see it
+
+----------------------------------- Step to setup 
+
+1. Create class: SlackMessage ( to generate message ) 
+
+@Data
+public class SlackMessage {
+	
+	private final String FORMART = "[%s -> %s] : %s";
+	
+	private String sender;
+	private String receiver;
+	private String message;
+	
+	@Override
+	public String toString() {
+		return String.format(FORMART, this.sender, this.receiver, this.message);
+	}
+
+}
+
+2. creates class: SlackMember ( Member that subscriber to group chat )
+
+@Data
+public class SlackMember {
+	
+	private String name;
+	private Consumer<String> messageConsumer;
+	
+	void receives(String msg) {
+		System.out.println(msg);
+	}
+
+	public String getName() {
+		return name;
+	}
+	
+	public void says(String msg) {
+		messageConsumer.accept(msg);
+	}
+
+	void setMessageConsumer(Consumer<String> messageConsumer) {
+		this.messageConsumer = messageConsumer;
+	}
+
+	public SlackMember(String name) {
+		this.name = name;
+	}
+	
+
+}
+
+
+3. Create Class: SlackRoom ( feature for the chat group )
+
+public class SlackRoom {
+	
+	/*
+	 * 1. Slack Room : (joinRoom(), groupName, 
+	 * 2. Sinks (we want to get : sender and receiver msg),  PARAMETER : SlackMessge (Sinks.Many = Many is inside Sink) 
+	 * 3. Flux of message in group- to member can subsribe), PARAMETER : SLackMessage
+
+	 */
+	
+	private String name; // refer to group name 
+	private Sinks.Many<SlackMessage> sink; // for publish the message : emit the message 
+	private Flux<SlackMessage> flux; // for subsriber 
+	
+	
+	// Function : Create group and feature what they can do inside the group 
+	public SlackRoom(String name) {
+		this.name=name;
+		this.sink = Sinks.many().replay().all(); // for the new subsriber can see the history (publisher)
+		this.flux = sink.asFlux(); // // flux = register to group (subsriber) 
+	}
+	
+	
+	public void joinRoom(SlackMember slackMember) {
+		System.out.println(slackMember.getName() + "------ Joined ------ " + name);
+		subsribes(slackMember); // when someone join room they need to subcriber functin 
+		
+		/*
+		slackMember.setMessageConsumer(msg ->{
+			postMessage(msg, slackMember);
+		});
+		*/
+		slackMember.setMessageConsumer(msg -> postMessage(msg, slackMember));// this mean Member they can say when they want 
+		
+	}
+	
+	// function to see who is post and what they post about something 	
+	public void postMessage(String msg, SlackMember slackMember) {
+		SlackMessage slackMessage = new SlackMessage();
+		slackMessage.setSender(slackMember.getName()); // msg Sender = Meber in group 
+		slackMessage.setMessage(msg); // msg " what they say" = member in group messae 		
+		this.sink.tryEmitNext(slackMessage); // Inside the group will Publish to each member = emit when they post 
+	}
+	
+	//Function: to create subscrib of the member 
+	 private void subsribes(SlackMember slackMember) {
+		
+		 // this.flux mean (flux of SlackMessage)sm
+		 
+		 this.flux // flux where we create subscriber then to show in each device (create print) 
+		 	.filter(sm -> !sm.getSender().equals(slackMember.getName())) // we should filter by ID 
+		 	.doOnNext(sm ->sm.setReceiver(slackMember.getName())) // we set the recevier 
+		 	//.map(sm -> sm.toString()) // we want to get the Fromate as we set " Sender -> receiver and msg " 
+		 	.map(SlackMessage::toString)
+		 	
+		 	//.subscribe(sm -> slackMember.receives(sm.getMessage()));	 	
+		 	.subscribe(slackMember::receives); //style method refere
+	 }
+	
+
+}
+
+
+4. Main Application : SlackApplication
+
+public class SlackApplication {
+	
+	public static void main(String[] args) {
+		SlackRoom room = new SlackRoom("Java Reactive Class");
+		
+		
+		// member in group 
+		SlackMember dara = new SlackMember("Dara");
+		SlackMember rith = new SlackMember("Rith");
+		SlackMember thida = new SlackMember("Thida");
+		
+		
+		// 
+		room.joinRoom(dara);
+		room.joinRoom(rith);
+		
+		dara.says("Hello Everyone!");		
+		rith.says("Hi guys");
+		
+		
+		room.joinRoom(thida);
+		
+		dara.says("YES");
+		
+		thida.says("Love you");
+		
+		
+	}
+
+}
+
+
+=========== Result : 
+
+Dara------ Joined ------ Java Reactive Class
+Rith------ Joined ------ Java Reactive Class
+[Dara -> Rith] : Hello Everyone!
+[Rith -> Dara] : Hi guys
+Thida------ Joined ------ Java Reactive Class
+[Dara -> Thida] : Hello Everyone!
+[Rith -> Thida] : Hi guys
+[Dara -> Rith] : YES
+[Dara -> Thida] : YES
+[Thida -> Dara] : Love you
+[Thida -> Rith] : Love you
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
