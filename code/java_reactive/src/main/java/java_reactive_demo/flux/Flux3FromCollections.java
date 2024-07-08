@@ -10,7 +10,7 @@ public class Flux3FromCollections {
 		*/		
 		// Integer is the object type
 		
-		
+		//Array of Integer
 		Integer[] numbers = {5,6,7,12};
 		
 		Flux<Integer> flux = Flux.fromArray(numbers);

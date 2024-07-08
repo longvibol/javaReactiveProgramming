@@ -1,0 +1,286 @@
+Week 9.2: Repeat and Retry
+
+- repeat: resubscriber after complete signal 
+- retry : resubscriber after error signal 
+
+----------------------------
+
+Repeat:
+
+public class R1Repeat {
+
+	public static void main(String[] args) {
+
+		flux()
+			.repeat(2)
+			.subscribe(Util.subcriber());
+		
+	}
+	
+	public static Flux<Integer> flux(){
+		return Flux.range(1, 3)
+				.doOnSubscribe(x -> System.out.println("--->Subscrib"))
+				.doOnComplete(() -> System.out.println("--->Complete"))
+				;
+				
+	}
+
+}
+
+--->Subscrib
+Recieved: 1
+Recieved: 2
+Recieved: 3
+--->Complete
+--->Subscrib
+Recieved: 1
+Recieved: 2
+Recieved: 3
+--->Complete
+--->Subscrib
+Recieved: 1
+Recieved: 2
+Recieved: 3
+--->Complete
+Completed
+
+
+វាធ្វើ ពីរដង់ : .repeat(2)
+
+Ex: we play music then we want to reply again : what why we use repeat 
+
+---------------------------------------
+
+Ex: difference data 
+
+public class R1Repeat {
+	
+	private static AtomicInteger atomicInteger = new AtomicInteger();
+
+	public static void main(String[] args) {
+
+		flux()
+			.repeat(2)
+			.subscribe(Util.subcriber());
+		
+	}
+	
+	public static Flux<Integer> flux(){
+		return Flux.range(1, 3)
+				.doOnSubscribe(x -> System.out.println("--->Subscrib"))
+				.doOnComplete(() -> System.out.println("--->Complete"))
+				.map(x -> atomicInteger.getAndIncrement())
+				;
+				
+	}
+
+}
+
+------------------------------
+
+private static AtomicInteger atomicInteger = new AtomicInteger();
+
+.map(x -> atomicInteger.getAndIncrement()) // វាកើនតម្លៃម្តង់មួយធាតុៗ 
+
+-> 
+
+--->Subscrib
+Recieved: 0
+Recieved: 1
+Recieved: 2
+--->Complete
+--->Subscrib
+Recieved: 3
+Recieved: 4
+Recieved: 5
+--->Complete
+Completed
+
+
+----------------------------
+
+Infiniy loop : 
+
+public class R1Repeat {
+	
+	private static AtomicInteger atomicInteger = new AtomicInteger();
+
+	public static void main(String[] args) {
+
+		flux()
+			.repeat()
+			.subscribe(Util.subcriber());
+		
+	}
+	
+	public static Flux<Integer> flux(){
+		return Flux.range(1, 3)
+				.doOnSubscribe(x -> System.out.println("--->Subscrib"))
+				.doOnComplete(() -> System.out.println("--->Complete"))
+				.map(x -> atomicInteger.getAndIncrement())
+				;
+				
+	}
+
+}
+
+------------------------------
+
+.repeat() // infiny loop 
+
+
+
+------------------------------
+
+- Custom repeat : 
+
+	flux()
+			.repeat(()->atomicInteger.get() <15)
+			.subscribe(Util.subcriber());
+		
+	}
+
+
+- when meet the condidtion number 15 it will stop but it need to check the range(1,3) if it now yet meet the 
+condition. it will running 
+
+
+.repeat(()->atomicInteger.get() <15)
+
+-------------- In case it meet the error : it will not work 
+
+public static Flux<Integer> flux(){
+		return Flux.range(1, 3)
+				.doOnSubscribe(x -> System.out.println("--->Subscrib"))
+				.doOnComplete(() -> System.out.println("--->Complete"))
+				.map(x -> atomicInteger.getAndIncrement())
+				.map(x -> x/0)
+				;
+				
+	}
+
+
+***
+--->Subscrib
+onError: / by zero
+
+
+
+---------------------------
+
+Concution: Repeat waiting compete signal : if it not meet the complete signe it will not work 
+
+
+=============================
+
+2. Retry : 
+
+Example:
+
+
+public static void main(String[] args) {
+
+		flux()
+			.retry(2)
+			.subscribe(Util.subcriber());
+		
+	}
+	
+	public static Flux<Integer> flux(){
+		return Flux.range(1, 3)
+				.doOnSubscribe(x -> System.out.println("--->Subscrib"))
+				.doOnComplete(() -> System.out.println("--->Complete"))
+				.map(x -> atomicInteger.getAndIncrement())
+				.map(x -> x/0)
+				;
+				
+	}
+
+
+--------------------------------
+
+
+.retry(2) ពេលជួប Error វាធ្វើការឡើងវិញចំនួន ពីរលើក 
+
+
+--->Subscrib // first subscriber 
+--->Subscrib  // retry 1 
+--->Subscrib  // retry 2
+onError: / by zero
+
+-------------------------------- Retry with delay time 
+
+public static void main(String[] args) {
+
+		flux()
+			.retryWhen(Retry.fixedDelay(2, Duration.ofSeconds(2)))
+			.subscribe(Util.subcriber());
+		
+		Util.sleep(10);
+	}
+	
+	public static Flux<Integer> flux(){
+		return Flux.range(1, 3)
+				.doOnSubscribe(x -> System.out.println("--->Subscrib"))
+				.doOnComplete(() -> System.out.println("--->Complete"))
+				.map(x -> atomicInteger.getAndIncrement())				
+				.map(x -> x/(Util.faker().random().nextInt(1, 6) < 3 ? 0:1))
+				.doOnError(err -> System.out.println("----> Error : "+err.getMessage()))
+				;
+				
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

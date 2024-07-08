@@ -1,0 +1,532 @@
+Week: 7.1 : Backpresure & Overflow Strategy 
+
+- ពេលដែល Producer Over: It make the receiver can not review on time
+- ពេលដែលវាបង្កើតច្រើនចឹងហើយអ្នកយកទៅប្រើវាមិនទាន់វា ធ្វើអោយពេញ Memory ធ្វើអោយម៉ាស៊ីន stack 
+- Producer is pusing Iteam or object 
+
+
+--------------- challenge 1
+
+public class BP1OverFlowDemo {
+
+	public static void main(String[] args) {
+
+		Flux.create(sink->{
+			for(int i=0; i<501; i++) {
+				System.out.println("Pushed: "+i);
+				sink.next(i);
+			}
+			sink.complete();
+
+		})
+		
+		.publishOn(Schedulers.boundedElastic())
+		//we want to create senario when we save to Database then it take 10s to save 
+		.doOnNext( x ->{
+			Util.sleepMili(10);
+		})
+		.subscribe(Util.subcriber());
+		
+		Util.sleep(60);
+		
+	}
+
+}
+
+-- Publiser produce 500 iteam and it take 10 s to save to Database 
+Ex:
+
+.doOnNext( x ->{
+			Util.sleepMili(10);
+		})
+
+
+-- Block Thread Util.sleep(60) = 60s យើងបង្អាក់អោយ Thread នឹងមិនដំណើរការ 60s 
+Ex:
+
+Flux.create(sink->{
+			for(int i=0; i<501; i++) {
+				System.out.println("Pushed: "+i);
+				sink.next(i);
+			}
+			sink.complete();
+
+		})
+
+------------------------------------------------------------------
+
+Pushed: 0
+Pushed: 1
+Pushed: 2
+Pushed: 3
+Pushed: 4
+Pushed: 5
+Pushed: 6
+Pushed: 7
+Pushed: 8
+Pushed: 9
+----
+---
+Pushed: 499
+Pushed: 500
+Recieved: 0
+Recieved: 1
+Recieved: 2
+Recieved: 3
+Recieved: 4
+Recieved: 5
+Recieved: 6
+Recieved: 7
+Recieved: 8
+----
+---
+Recieved: 498
+Recieved: 499
+Recieved: 500
+Completed
+
+វា public ចប់ទើប Revieved វាចាប់ផ្តើមធ្វើការបន្ត 
+
+===> this is not at problem when the data is small 
+Conslution: so in the real world is not that we have big file and something it have relationship: so it will outoff Memonry 
+
+
+------------------------------------------------------------------------------------  
+
+Solution have 4: 
+
+1. buffer: keep it memory (default) it will keep in memory 
+2. drop : once the queue it full, new items will be dropped. 
+3. latest: once the queue is full, keep 1 latest iteam as and when it arrives. drop ols. 
+4. error: throws error to downstream 
+
+=======================================================
+
+1. Buffer example :
+
+Flux.create(sink->{
+			for(int i=0; i<501; i++) {
+				System.out.println("Pushed: "+i);
+				sink.next(i);
+			}
+			sink.complete();
+
+		})
+		.onBackpressureDrop()
+		.publishOn(Schedulers.boundedElastic())
+		.doOnNext( x ->{
+			Util.sleepMili(10);
+		})
+		.subscribe(Util.subcriber());
+		
+		Util.sleep(60);
+		
+	}
+
+
+.onBackpressureDrop() = by default when full in queue it will drop the receiver 
+
+Recieved: 0
+Recieved: 1
+Recieved: 2
+Recieved: 3
+Recieved: 4
+Recieved: 5
+Recieved: 6
+Recieved: 7
+Recieved: 8
+----
+---
+Recieved: 253
+Recieved: 254
+Recieved: 255
+Completed
+
+==> in queues : the default is 256
+
+public static final int SMALL_BUFFER_SIZE = Math.max(16,
+			Integer.parseInt(System.getProperty("reactor.bufferSize.small", "256")));
+
+
+ពេលវាពេល queues វានឹង drop 
+
+-------------------------------- 
+Flux.create(sink->{
+			for(int i=1; i<501; i++) {
+				System.out.println("Pushed: "+i);
+				sink.next(i);
+				Util.sleepMili(i);
+			}
+			sink.complete();
+
+
+យើងធ្វើការ push Producer in 1 second 
+
+Ex: setup queues to 16 iteam 
+
+System.setProperty("reactor.bufferSize.small", "16");
+
+វាធ្វើការតែ 75% of 16 queue =  12 iteams 
+
+So when the reciver get 12 ieams នៃ 75% នៅក្នុង Queues វា drop 
+ដូចនេះវា ទំលាក់ចោល លេខ ក្រោយ 12 iteam neng 
+
+( 
+----
+Pushed: 72
+Pushed: 73
+Pushed: 74
+Pushed: 75
+Pushed: 76
+Pushed: 77
+---
+)
+
+Recieved: 12
+Pushed: 78
+
+ដូចនេះបន្ទាប់ពីលេខ 12 ទៅគឺវាយកលេខ Recieved: 78
+
+Pushed: 97
+Pushed: 98
+-------------------
+Recieved: 16
+
+------------
+Pushed: 99
+Pushed: 100
+Pushed: 101
+Pushed: 102
+Pushed: 103
+
+------------------
+
+Recieved: 78 វាចាប់យកលេខ 78 from producer not 13 
+
+----------------------
+Pushed: 104
+Pushed: 105
+
+
+
+Ex: 
+
+Pushed: 69
+Pushed: 70
+Pushed: 71
+Recieved: 11
+Pushed: 72
+Pushed: 73
+Pushed: 74
+Pushed: 75
+Pushed: 76
+*** Recieved: 77 (producer push number 78) 
+Recieved: 12 ( 75% of the queues 16 iteam) new receive is 78 
+Pushed: 78
+Pushed: 79
+Pushed: 80
+Pushed: 81
+Pushed: 82
+Recieved: 13
+Pushed: 83
+Pushed: 84
+Pushed: 85
+Pushed: 86
+Pushed: 87
+Recieved: 14
+Pushed: 88
+Pushed: 89
+Pushed: 90
+Pushed: 91
+Pushed: 92
+Pushed: 93
+Recieved: 15
+Pushed: 94
+Pushed: 95
+Pushed: 96
+Pushed: 97
+Pushed: 98
+Recieved: 16  (full queues) 
+Pushed: 99
+Pushed: 100
+Pushed: 101
+Pushed: 102
+Pushed: 103 
+Recieved: 78 (វាចាប់លេខបន្ទាប់)​ វាមិនចាប់លេខ ១៧​ ទេព្រោះវា drop bat hery 
+Pushed: 104
+Pushed: 105
+Pushed: 106
+Pushed: 107
+Pushed: 108 
+Recieved: 79
+
+===============================================
+
+2. onBackpressureLatest() (វាទុក iteam 1) 
+
+		System.setProperty("reactor.bufferSize.small", "16");
+
+		Flux.create(sink->{
+			for(int i=1; i<501; i++) {
+				System.out.println("Pushed: "+i);
+				sink.next(i);
+				Util.sleepMili(1);
+			}
+			sink.complete();
+
+		})
+		.onBackpressureLatest()
+		.publishOn(Schedulers.boundedElastic())
+		.doOnNext( x ->{
+			Util.sleepMili(10);
+		})
+		.subscribe(Util.subcriber());
+		
+		Util.sleep(60);
+		
+	}
+
+--------------------------------- 
+
+Pushed: 70
+Recieved: 12 (75%) 
+Pushed: 71
+---
+---
+Pushed: 92
+Pushed: 93
+Recieved: 16
+Pushed: 94
+Pushed: 95
+Pushed: 96
+Pushed: 97
+Pushed: 98
+Pushed: 99
+Recieved: 70  (it keep number 70) 
+Pushed: 100
+Pushed: 101
+
+
+------------------------------------------------------------------------- 
+
+Note: save dropvalue:
+
+System.setProperty("reactor.bufferSize.small", "16");
+		
+		List<Object> list = new ArrayList<>();
+
+		Flux.create(sink->{
+			for(int i=1; i<501; i++) {
+				System.out.println("Pushed: "+i);
+				sink.next(i);
+				Util.sleepMili(1);
+			}
+			sink.complete();
+
+		})
+		.onBackpressureDrop(valueDropped ->{
+			list.add(valueDropped);
+		})
+		.publishOn(Schedulers.boundedElastic())
+		.doOnNext( x ->{
+			Util.sleepMili(10);
+		})
+		.subscribe(Util.subcriber());
+		
+		Util.sleep(5);
+		
+		System.out.println(list);
+		
+	}
+
+
+Recieved: 476
+Recieved: 477
+Recieved: 478
+Recieved: 479
+Completed
+[17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324, 325, 326, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 371, 372, 373, 374, 375, 376, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386, 387, 388, 389, 390, 391, 392, 393, 394, 395, 396, 397, 398, 399, 412, 413, 414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435, 436, 437, 438, 439, 440, 441, 442, 443, 444, 445, 446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500]
+
+
+or 
+.onBackpressureDrop(list::add)  // Method reference 
+
+--------------------------------
+
+4. error: throws error to downstream 
+
+
+Flux.create(sink->{
+			for(int i=1; i<501; i++) {
+				System.out.println("Pushed: "+i);
+				sink.next(i);
+				Util.sleepMili(1);
+			}
+			sink.complete();
+
+		})
+		.onBackpressureError()
+		.publishOn(Schedulers.boundedElastic())
+		.doOnNext( x ->{
+			Util.sleepMili(10);
+		})
+		.subscribe(Util.subcriber());
+
+----------------------
+
+
+Pushed: 88
+Recieved: 16
+onError: The receiver is overrun by more signals than expected (bounded queue...)
+Pushed: 89
+--
+--
+Pushed: 500
+
+យើងចង់បានពេលដែលវាជួប Error ចង់អោយ publisher stop produce iteam តែម្តង់
+
+for(int i=1; i<501 && !sink.isCancelled(); i++) {
+				System.out.println("Pushed: "+i);
+				sink.next(i);
+				Util.sleepMili(1);
+			}
+			sink.complete();
+
+
+------------------- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

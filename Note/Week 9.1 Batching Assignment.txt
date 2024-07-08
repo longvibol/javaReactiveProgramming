@@ -1,0 +1,281 @@
+Week 9.1: Batching Assignment
+
+- buffer : collect iteam util buffer size - it is return is **list (រង់ចាំទល់តែគ្រប់ទើបវា ចេញតម្លៃអោយ)​
+list គ្រប់ចំនួនបានវាធ្វើការ
+- Window : collect as *** flux (faster then buffer)- វាធ្វើភ្លាមៗតែម្តង
+
+
+public static void main(String[] args) {
+
+		flux()
+			.groupBy(x -> x%2)
+			.subscribe(gf -> processItem(gf, gf.key()));
+		
+		Util.sleep(20);
+		
+	}
+	
+	public static void processItem(Flux<Integer> flux, Integer key) {
+		System.out.println("----------Called-------------");
+		flux.subscribe(x -> System.out.println("Item: " + x + " - Key: "+ key));
+		
+	}
+	
+	public static Flux<Integer> flux(){
+		return Flux.range(1, 30)
+					.delayElements(Duration.ofSeconds(1));
+	}
+
+
+----------Called-------------
+Item: 1 - Key: 1
+----------Called-------------
+Item: 2 - Key: 0
+Item: 3 - Key: 1
+Item: 4 - Key: 0
+Item: 5 - Key: 1
+Item: 6 - Key: 0
+Item: 7 - Key: 1
+Item: 8 - Key: 0
+Item: 9 - Key: 1
+Item: 10 - Key: 0
+Item: 11 - Key: 1
+Item: 12 - Key: 0
+Item: 13 - Key: 1
+Item: 14 - Key: 0
+
+========================
+
+we use when we have many group then we want it to process difference task 
+
+Example: 
+
+Assignment:
+
+PurchaseOrder: Kids & Automative
+
+kids: discount 50% + free one order (do packageing too)
+Automotive: tax 10% (do packaging too) 
+
+------------------------
+
+every 300 have someone to order 
+
+----------------------------- Step to think 
+
+1. We need Publisher to create 300mils buy product 
+2. Business logic : Kid and Sport (discount and package)
+3. filter the product only the kid and sport 
+
+---------------------------
+
+1. Create class : PurchaseOrder
+
+@Data
+public class PurchaseOrder {
+	private String productName;
+	private Double price;
+	private String category;
+	
+	public PurchaseOrder() {
+		this.productName = Util.faker().commerce().productName();
+		this.price = Double.parseDouble(Util.faker().commerce().price());
+		category = Util.faker().commerce().department();
+	}
+}
+
+
+-----------------
+
+2. Create class : OrderProcess ( what we want to do : discount, packaing or sth )
+
+public Function<Flux<PurchaseOrder>, Flux<PurchaseOrder>> sportsProcessing(){
+		return flux ->{
+			return flux
+					.doOnNext(p -> p.setPrice(1.1 * p.getPrice()))
+					.doOnNext(p -> p.setProductName("[[" + p.getProductName() + "]]"));
+		};
+	}
+	
+	public Function<Flux<PurchaseOrder>, Flux<PurchaseOrder>> kidsProcessing(){
+		return flux ->{
+			return flux
+					.doOnNext(p -> p.setPrice(0.5 * p.getPrice()))
+					.flatMap(p -> Flux.just(p, getFreePurchesOrder()))
+					.doOnNext(p -> p.setProductName("[[" + p.getProductName() + "]]"));
+		};
+	}
+	
+	public PurchaseOrder getFreePurchesOrder() {
+		PurchaseOrder order = new PurchaseOrder();
+		order.setPrice(0d);
+		order.setProductName("FREE-" + order.getProductName());
+		
+		return order;
+		
+	}
+
+}
+
+3. Create Class: OrderService ( where we call and generate PurchageOrder) 
+
+public class OrderService {
+	
+	public Flux<PurchaseOrder> orderFlux(){
+		return Flux.interval(Duration.ofMillis(100))
+			.map(x -> new PurchaseOrder());
+	}
+
+}
+
+--------------------------------
+
+4. Main App: 
+
+public class PurchaseOrderAssignment {
+
+	public static void main(String[] args) {
+
+		/*
+		for(int i =1; i<50; i++) {
+			String category = Util.faker().commerce().department();
+			System.out.println(category);
+		}
+		
+		// Sports, Kids
+		 
+		 */
+		
+		OrderProcess orderProcess = new OrderProcess();
+		
+		// we want to group by category Kid and Sports and need to put our business logic : call our function
+		Map<String, Function<Flux<PurchaseOrder>, Flux<PurchaseOrder>>> map = Map.of(
+				"Kids" , orderProcess.kidsProcessing(),
+				"Sports" , orderProcess.sportsProcessing()
+				);
+		
+		//Set<String> set = Set.of("Kids","Sports");
+		
+		Set<String> set = map.keySet();  //To get the key String from the Map
+		
+		OrderService orderService = new OrderService();
+		
+		orderService		
+			.orderFlux()
+			.filter(p ->set.contains(p.getCategory()))
+			.groupBy(p ->p.getCategory())
+			.flatMap(gf -> map.get(gf.key()).apply(gf)) // 1. Function(we call apply function ; 2. map to the key then Flatmap to get publiser
+			.subscribe(Util.subcriber());
+		
+		
+		Util.sleep(10);		
+		
+	}
+
+}
+----------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

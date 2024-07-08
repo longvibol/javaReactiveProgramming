@@ -1,10 +1,7 @@
 package java_reactive_demo;
 
-import com.github.javafaker.Faker;
-
 import java_reactive_demo.util.CountryRepository;
 import java_reactive_demo.util.Util;
-import reactor.core.publisher.Mono;
 
 public class Demo4UsingFaker {
 
@@ -18,7 +15,7 @@ public class Demo4UsingFaker {
 //		}
 		
 		
-		CountryRepository.findByid(24)
+		CountryRepository.findByid(1)
 			.subscribe(Util.onNext(), Util.onError(),Util.onComplete());
 		
 	}

@@ -1,0 +1,382 @@
+Week 10 : Sink Type
+
+type		:	Behavior	:	Pub-Sub
+- one		:	Mono		:	1:N  // 1 publisher can have many subscriber 
+- many-unicast	:	Flux		:	1:1 
+- many-Multicast:	Flux		:	1:N
+- many-replay	:	Flux		:	1:N (With replay of all values for late subscribers) 
+
+
+- Thread Safe : 
+Ex: យើងដំណើរការប៉ុន្មានដង់ក៏ដោយក៏ចំលើយនៅតែដដែល​
+Ex: object ពីរព្យាយាមទៅ Update object value ណាមួយតម្លៃចុងក្រោងគឺជាតម្លៃចុងក្រោយ
+
+--------------------------------------------
+
+1. S4Unicast 
+
+public static void main(String[] args) {
+
+		// sink = publisher
+		Many<Object> sink = Sinks.many().unicast().onBackpressureBuffer(); //unicast : one Sub and one Pub 
+		
+		// flux = subcirber 
+		Flux<Object> flux = sink.asFlux();
+		
+		sink.tryEmitNext("Hello");
+		sink.tryEmitNext("How are you !");
+		
+		flux.subscribe(Util.subcriber("Dara"));
+		flux.subscribe(Util.subcriber("Thida")); // have two sub is error 
+	}
+
+}
+
+Note: 
+
+Many<Object> sink = Sinks.many().unicast().onBackpressureBuffer();
+
+we create publisher with Uniast then with onBackpresuerBuffer (if publisher create many than reciver it will drop some item) 
+
+- Error if we have more than 1 subscriber 
+
+----------------------------------------------------------
+
+2. SinkThreadSafety : Sink is the Thread Safe (that what we want )
+
+public static void main(String[] args) {
+
+		// sink = publisher
+		Many<Object> sink = Sinks.many().unicast().onBackpressureBuffer(); 
+		
+		// flux = subcirber		
+		Flux<Object> flux = sink.asFlux();
+
+		List<Object> list = new ArrayList<>();
+		
+		//flux.subscribe(x ->list.add(x));
+		flux.subscribe(list::add);
+
+		for (int i = 0; i < 100; i++) {
+			int j =i;
+			CompletableFuture.runAsync(() -> {
+				//sink.tryEmitNext(j);
+				sink.emitNext(j, (s,e)->true);
+			});
+		}
+
+		Util.sleep(1);
+		System.out.println(list.size());
+
+	}
+
+Note: 
+it have only one subscriber then we want to have value 100 every thread ruuning : 
+
+- we want to get the Sink (publisher that publish the same iteam all the time) it is call Sink Thread Safy 
+
+- sink.emitNext(j, (s,e)->true); អោយវាធ្វើការទាល់តែអស់ iteam I ban ory vir stop 
+
+3. Multicast 
+
+public static void main(String[] args) {
+
+		// sink = publisher
+		Many<Object> sink = Sinks.many().multicast().onBackpressureBuffer(); 
+		
+		// flux = subcirber 
+		Flux<Object> flux = sink.asFlux();
+		
+		sink.tryEmitNext("Hello-1"); // message in queue
+		sink.tryEmitNext("How are you ! - 2"); // message in queue
+		
+		flux.subscribe(Util.subcriber("1 Dara"));
+		flux.subscribe(Util.subcriber("2 Rith"));  
+		
+		sink.tryEmitNext("? - 3");
+		flux.subscribe(Util.subcriber("3 Thida")); 
+		
+		sink.tryEmitNext("for first sub - 4");
+	}
+
+1 Dara - Recieved: Hello-1
+1 Dara - Recieved: How are you ! - 2
+1 Dara - Recieved: ? - 3
+2 Rith - Recieved: ? - 3
+1 Dara - Recieved: for first sub - 4
+2 Rith - Recieved: for first sub - 4
+3 Thida - Recieved: for first sub - 4
+
+អ្នក sub 1 គឺបាន recive all emit from publisher 
+- sub 2 គឺបាន​  recive​ only emit from publisher ខាងក្រោមវាទេ
+
+
+======================================
+
+7 disable history:
+
+public static void main(String[] args) {
+
+		// sink = publisher
+		Many<Object> sink = Sinks.many().multicast().directAllOrNothing();
+		
+		// flux = subcirber 
+		Flux<Object> flux = sink.asFlux();
+		
+		sink.tryEmitNext("Hello-1");
+		sink.tryEmitNext("How are you ! - 2");
+		
+		flux.subscribe(Util.subcriber("1 Dara"));
+		flux.subscribe(Util.subcriber("2 Rith"));  
+		
+		sink.tryEmitNext("? - 3");
+		flux.subscribe(Util.subcriber("3 Thida")); 
+		
+		sink.tryEmitNext("new message - 4");
+	}
+
+1 Dara - Recieved: ? - 3
+2 Rith - Recieved: ? - 3
+1 Dara - Recieved: new message - 4
+2 Rith - Recieved: new message - 4
+3 Thida - Recieved: new message - 4
+
+-note 
+
+when have last message all the subscriber will get all but the history will not get it :
+
+-------------------
+
+8: directAllorNothing (បើបានបានទំាងអស់គ្នាបើ អត់អត់ទាំងអស់គ្នា)
+
+in real world the performace are different, some people are smart and performance very good 
+
+public static void main(String[] args) {
+
+		// sink = publisher
+		Many<Object> sink = Sinks.many().multicast().directAllOrNothing();
+		
+		// flux = subcirber 
+		Flux<Object> flux = sink.asFlux();
+		
+		
+		flux.subscribe(Util.subcriber("Dara"));
+		flux.delayElements(Duration.ofMillis(100)).subscribe(Util.subcriber("Rith"));  
+		
+		
+		for (int i =0; i<100; i++) {
+			sink.tryEmitNext(i);
+		}
+		
+		Util.sleep(10);
+	}
+
+
+-->
+
+Rith - Recieved: 0-31 and Dara - Recieved: 0-31 (Dara performance very slow)
+
+- soluction we use Best affort:
+
+
+Many<Object> sink = Sinks.many().multicast().directBestEffort();
+
+--> 
+
+Rith - Recieved: 0-99 and Dara - Recieved: 0-31 (Dara performance very slow) have delayElement 
+
+----------------------------------------------------
+
+9 : catch history : Replay message 
+
+public static void main(String[] args) {
+
+		// sink = publisher
+		Many<Object> sink = Sinks.many().replay().all();
+		
+		// flux = subcirber 
+		Flux<Object> flux = sink.asFlux();
+		
+		sink.tryEmitNext("Hello-1");
+		sink.tryEmitNext("How are you ! - 2");
+		
+		flux.subscribe(Util.subcriber("1 Dara"));
+		flux.subscribe(Util.subcriber("2 Rith"));  
+		
+		sink.tryEmitNext("? - 3");
+		flux.subscribe(Util.subcriber("3 Thida")); 
+		
+		sink.tryEmitNext("for first sub - 4");
+	}
+
+}
+
+--> All the history will emit to the new user : 
+
+
+1 Dara - Recieved: Hello-1
+1 Dara - Recieved: How are you ! - 2
+2 Rith - Recieved: Hello-1
+2 Rith - Recieved: How are you ! - 2
+1 Dara - Recieved: ? - 3
+2 Rith - Recieved: ? - 3
+3 Thida - Recieved: Hello-1
+3 Thida - Recieved: How are you ! - 2
+3 Thida - Recieved: ? - 3
+1 Dara - Recieved: for first sub - 4
+2 Rith - Recieved: for first sub - 4
+3 Thida - Recieved: for first sub - 4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -10,7 +10,7 @@ public class Flux11FluxtoMono {
 		Flux<Integer> flux = Flux.just(2,4,5,6);
 		
 		flux
-			.filter(x->x>1)
+			.filter(x->x>3)
 			.next() // where we conver from flux to mono
 			.subscribe(x ->System.out.println(x));
 			
