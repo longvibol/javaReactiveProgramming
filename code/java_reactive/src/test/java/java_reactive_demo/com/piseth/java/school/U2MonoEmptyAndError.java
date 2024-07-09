@@ -6,62 +6,85 @@ import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-public class U2MonoEmptyAndError {
+public class U2MonoEmptyAndError {	
 	
 	private Mono<String> getProduct(int productId){
-		return switch(productId) {
+		return switch (productId) {
 		case 1 -> Mono.just("Cocacola");
 		case 2 -> Mono.empty();
-		default -> Mono.error(() -> new RuntimeException("Invalid productId"));
-		};
+		default -> Mono.error(()-> new RuntimeException("Invalid productId"));
+			
+		};			
 	}
 	
-	@Test
+	@Test 
 	public void testProduct() {
 		StepVerifier.create(getProduct(1))
 			.expectNext("Cocacola")
 			.expectComplete()
-			.verify(); // subscriber
+			.verify();  //verify the same as Subscriber 		
 	}
 	
-	@Test
+	@Test 
 	public void testEmpty() {
 		StepVerifier.create(getProduct(2))
 			.expectComplete()
-			.verify(); 
+			.verify();  		
 	}
 	
-	@Test
+	@Test 
 	public void testError1() {
 		StepVerifier.create(getProduct(3))
 			.expectError()
-			.verify(); 
+			.verify();  		
 	}
 	
-	@Test
+	@Test 
+	public void testError() {
+		StepVerifier.create(getProduct(3))
+			.verifyError();  		
+	}
+	
+	@Test 
 	public void testError2() {
 		StepVerifier.create(getProduct(3))
 			.expectError(RuntimeException.class)
-			.verify(); 
+			.verify();  		
 	}
 	
-	@Test
+	@Test 
 	public void testError3() {
 		StepVerifier.create(getProduct(4))
 			.expectErrorMessage("Invalid productId")
-			.verify(); 
+			.verify();  		
 	}
 	
-	@Test
+	@Test 
 	public void testError4() {
 		StepVerifier.create(getProduct(3))
-			//.expectError(RuntimeException.class)
-			//.expectErrorMessage("Invalid productId")
 			.consumeErrorWith(err ->{
 				Assertions.assertEquals(RuntimeException.class, err.getClass());
 				Assertions.assertEquals("Invalid productId", err.getMessage());
 			})
-			.verify(); 
+			.verify();  		
 	}
-
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

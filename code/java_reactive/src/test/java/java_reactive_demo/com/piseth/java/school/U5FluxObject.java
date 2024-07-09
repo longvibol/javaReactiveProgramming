@@ -9,9 +9,9 @@ import java_reactive_demo.util.Util;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
-public class U5FluxtObject {
+public class U5FluxObject {
 	
-	private record Book(int id,  String title,  String author ) {
+	private record Book(int id, String title, String author) {
 		
 	}
 	
@@ -21,26 +21,61 @@ public class U5FluxtObject {
 	}
 	
 	@Test
-	public void testFlux3() {
+	public void testFlux() {
 		StepVerifier.create(getBooks())
-			.assertNext(x -> {
+			.assertNext(x ->{
 				Assertions.assertEquals(1, x.id());
 			})
-			.thenConsumeWhile(x -> Objects.nonNull(x.title()))
+			.assertNext(x ->{
+				Assertions.assertEquals(2, x.id());
+			})
+			.assertNext(x ->{
+				Assertions.assertEquals(3, x.id());
+			})
 			.expectComplete()
 			.verify();
-		
 	}
 	
 	@Test
-	public void testFlux4() {
+	public void testFlux1() {
+		StepVerifier.create(getBooks())
+			.assertNext(x ->{
+				Assertions.assertEquals(1, x.id());
+			})
+			.thenConsumeWhile(x -> Objects.nonNull(x.title))
+			.expectComplete()
+			.verify();
+	}
+	
+	//return element 
+	
+	@Test
+	public void testFlux2() { // we want to get only the element 
 		StepVerifier.create(getBooks().collectList())
-			.assertNext(x -> {
+			.assertNext(x ->{
 				Assertions.assertEquals(3, x.size());
 			})
 			.expectComplete()
 			.verify();
-		
 	}
+	
+	
+	
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -6,39 +6,50 @@ import org.junit.jupiter.api.Test;
 
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
+import reactor.test.StepVerifierOptions;
 
 public class U6VirtualTimeTest {
 	
 	private Flux<Integer> getItems(){
-		return Flux.range(1, 5)
-					.delayElements(Duration.ofSeconds(10));
+		return Flux.range(1, 3);
+				
 	}
 	
 	@Test
-	public void testFlux() {
-		//StepVerifier.create(getItems())
-		//StepVerifier.withVirtualTime(() -> getItems())
-		StepVerifier.withVirtualTime(this::getItems)
-			.thenAwait(Duration.ofSeconds(51))
-			.expectNext(1,2,3,4,5)
+	public void testFlux() { 		
+		// when we use variable in local we no need to declear the typs : so we can use Var
+		var options = StepVerifierOptions.create().scenarioName("Test item from 1 to 3");	
+		StepVerifier.create(getItems(), options)
+			.expectNext(15).as("First item should be 15")
+			.expectNext(2,3).as("then should be 2,3 item")
 			.expectComplete()
 			.verify();
-		
 	}
 	
-	@Test
-	public void testFlux2() {
-		StepVerifier.withVirtualTime(this::getItems)
-			.expectSubscription()
-			.expectNoEvent(Duration.ofSeconds(9))
-			.thenAwait(Duration.ofSeconds(20))
-			.expectNext(1,2)
-			.thenAwait(Duration.ofSeconds(30))
-			.expectNext(3,4,5)
-			.expectComplete()
-			.verify();
-		
-	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
