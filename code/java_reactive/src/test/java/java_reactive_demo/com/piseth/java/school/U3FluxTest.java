@@ -15,30 +15,40 @@ public class U3FluxTest {
 	public void testFlux() {
 		StepVerifier.create(getItems())
 			.expectNext(1)
-			//.expectComplete()
+			.expectNext(2)
+			.expectNext(3)
+			.expectComplete()
+			.verify();
+	}
+	
+	@Test
+	public void testFlux1() {
+		StepVerifier.create(getItems())
+			.expectNext(1)
 			.thenCancel()
 			.verify();
-		
 	}
 	
 	@Test
 	public void testFlux2() {
 		StepVerifier.create(getItems())
-			.expectNext(1)
-			.expectNext(2)
-			.expectNext(3)
-			.expectComplete()
-			.verify();
-		
-	}
-	
-	@Test
-	public void testFlux3() {
-		StepVerifier.create(getItems())
 			.expectNext(1,2,3)
 			.expectComplete()
 			.verify();
-		
 	}
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
